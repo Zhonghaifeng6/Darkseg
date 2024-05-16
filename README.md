@@ -1,4 +1,3 @@
-=============
 # requirements
 ```python	
 einops	0.6.1	
@@ -14,7 +13,7 @@ torch	1.13.1+cu116
 torchsummary	1.5.1	
 torchvision	0.14.1+cu116	0.18.0
 tqdm	4.66.1	4.66.4
-=============
+
 # datasets
 ```bash
 data
@@ -22,9 +21,8 @@ data
    ├─images (igfrared images)
    └─masks (labels)
 
-=============
 # train
 ```bash
-train_D: use dark and infrareds images to  train the network.
-train_dark: only use dark images to  train the network.
-train_infrared: only use infrared images to  train the network.
+`train_D.py` : use dark and infrareds images to  train the network.
+`train_dark.py` : only use dark images to  train the network.
+`train_infrared.py` : only use infrared images to  train the network.
