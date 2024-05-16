@@ -1,1 +1,0 @@
-There are two folders: input and output.
