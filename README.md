@@ -26,6 +26,6 @@ data
 train_D.py : use dark and infrareds images to  train the network.
 train_dark.py : only use dark images to  train the network.
 train_infrared.py : only use infrared images to  train the network.
-predict_Multi.py : use for multi-classes predict
-predict_Single.py : use for single-classes predict
+predict_Multi.py : using for multi-classes predict
+predict_Single.py : using for single-classes predict
 ```
