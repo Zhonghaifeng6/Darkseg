@@ -1,5 +1,6 @@
 =============
-requirements----	
+# requirements
+```python	
 einops	0.6.1	
 numpy	1.23.0	1.26.4
 pip	23.2.1	24.0
@@ -14,10 +15,16 @@ torchsummary	1.5.1
 torchvision	0.14.1+cu116	0.18.0
 tqdm	4.66.1	4.66.4
 =============
-datasets----
-             dark（dark images)
-data--- images (igfrared images)
-             masks (labels)
+# datasets
+```bash
+data
+   ├─dark（dark images)
+   ├─images (igfrared images)
+   └─masks (labels)
+
 =============
+# train
+```bash
+train_D: use dark and infrareds images to  train the network.
 train_dark: only use dark images to  train the network.
 train_infrared: only use infrared images to  train the network.
