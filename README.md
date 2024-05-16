@@ -18,7 +18,7 @@ tqdm	            4.66.1
 ```bash
 data
    ├─dark（dark images)
-   ├─images (igfrared images)
+   ├─images (infrared images)
    └─masks (labels)
 ```
 # train
