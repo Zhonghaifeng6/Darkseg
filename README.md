@@ -1,19 +1,19 @@
 # requirements
 
 ```
-einops	0.6.1	
-numpy	1.23.0
-pip	23.2.1
-scikit-image	0.21.0	
-scikit-learn	1.3.2	
+einops	      0.6.1	
+numpy	        1.23.0
+pip	        23.2.1
+scikit-image	 0.21.0	
+scikit-learn	 1.3.2	
 scikit-posthocs	0.8.0
-scipy	1.10.1
-tensorboard	2.14.0
+scipy	         1.10.1
+tensorboard	   2.14.0
 tensorboard-data-server   0.7.1	
-torch	                           1.13.1+cu116	
-torchsummary	          1.5.1	
-torchvision	          0.14.1+cu116
-tqdm	                           4.66.1
+torch	            1.13.1+cu116	
+torchsummary	     1.5.1	
+torchvision	      0.14.1+cu116
+tqdm	            4.66.1
 ```
 # datasets
 ```bash
