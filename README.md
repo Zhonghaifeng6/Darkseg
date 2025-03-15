@@ -1,5 +1,6 @@
 ## 💥 Motivation
-In this work, we discovered that simply converting existing semi-segmentation methods into a pure-transformer framework is ineffective. 
+In this work, we found that existing traditional scene perception methods are ineffective for garment perception in low-light environments.
+Our DarkSeg model learns illumination-invariant structural representations from infrared images, enabling accurate detection and classification of garment and facilitating robotic grasping in low-light environments.
 <p align="center">
 <img src="./docs/pipline.png" width=85% height=85% class="center">
 </p>
@@ -37,9 +38,10 @@ data
 ```
 # train
 ```
-train_D.py : use dark and infrareds images to  train the network.
-train_dark.py : only use dark images to  train the network.
-train_infrared.py : only use infrared images to  train the network.
-predict_Multi.py : use for multi-classes predict
-predict_Single.py : use for single-classes predict
+train.py : use dark and infrareds images to  train the teacher model and student model.
+inference_color.py : use for multi-classes predict
+inference.py : use for single-classes predict
 ```
+
+## Acknowlegement
+_**DarkSeg**_ is built upon [SegFormer](https://github.com/NVlabs/SegFormer). We thank their authors for making the source code publicly available.
