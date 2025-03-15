@@ -1,3 +1,10 @@
+## 💥 Motivation
+In this work, we discovered that simply converting existing semi-segmentation methods into a pure-transformer framework is ineffective. 
+<p align="center">
+<img src="./docs/backbone.png" width=50% height=80% class="center">
+<img src="./docs/issue.jpg" width=35% height=65% class="center">
+</p>
+
 # requirements
 
 ```
