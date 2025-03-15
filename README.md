@@ -5,7 +5,7 @@ Our DarkSeg model learns illumination-invariant structural representations from 
 <img src="./docs/pipline.png" width=85% height=85% class="center">
 </p>
 
-## 💥 Requirements
+## Requirements
 
 ```
 einops 	0.6.1	
@@ -36,7 +36,7 @@ data
    └─masks (labels)
    
 ```
-## 💥 Train
+## Train
 ```
 train.py : use dark and infrareds images to  train the teacher model and student model.
 inference_color.py : use for multi-classes predict
