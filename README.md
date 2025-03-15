@@ -1,7 +1,7 @@
 ## 💥 Motivation
 In this work, we discovered that simply converting existing semi-segmentation methods into a pure-transformer framework is ineffective. 
 <p align="center">
-<img src="./docs/pipline.png" width=50% height=80% class="center">
+<img src="./docs/pipline.png" width=100% height=100% class="center">
 </p>
 
 # requirements
