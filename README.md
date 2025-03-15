@@ -1,7 +1,7 @@
 ## 💥 Motivation
 In this work, we discovered that simply converting existing semi-segmentation methods into a pure-transformer framework is ineffective. 
 <p align="center">
-<img src="./docs/pipline.png" width=100% height=100% class="center">
+<img src="./docs/pipline.png" width=85% height=85% class="center">
 </p>
 
 # requirements
@@ -24,7 +24,7 @@ tqdm	      4.66.1
 # datasets
 The preview of our Darkclothes dataset is as follows.
 <p align="center">
-<img src="./docs/dataset.png" width=100% height=100% class="center">
+<img src="./docs/dataset.png" width=85% height=85% class="center">
 </p>
 
 Our Darkclothes is available at [Google Drive](https://drive.google.com/file/d/1Ee8ReaP48tECyilH6Yc08N6aU_qibGch/view?usp=sharing) 
