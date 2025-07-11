@@ -37,8 +37,8 @@ data
    
 ```
 ## Train and Test
-For training: backbone weights can be found at here: [Google Drive] (https://drive.google.com/file/d/1H88ezGCgxnE03PexoijSbuxoTJLr5xTl/view?usp=sharing), place the weights under the corrspanding floder.
-For testing: pretrained weights can be found at here: [Google Drive] (https://drive.google.com/file/d/1AdV7Bb9rDJDJF4WhVyrTveS65_B6rH60/view?usp=sharing), place the weights under the corrspanding floder.
+For training: backbone weights can be found at here: [Google Drive](https://drive.google.com/file/d/1H88ezGCgxnE03PexoijSbuxoTJLr5xTl/view?usp=sharing), place the weights under the corrspanding floder.
+For testing: pretrained weights can be found at here: [Google Drive](https://drive.google.com/file/d/1AdV7Bb9rDJDJF4WhVyrTveS65_B6rH60/view?usp=sharing), place the weights under the corrspanding floder.
 ```
 train.py : use dark and infrareds images to  train the teacher model and student model.
 inference_color.py : use for multi-classes predict
