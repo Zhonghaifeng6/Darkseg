@@ -27,15 +27,15 @@ class NetConfig:
                  load = False,   # Load model from a .pth file
                  save_cp = True,
 
-                 model='UNet1',
+                 model='DarkSeg',
                  bilinear = True,
                  deepsupervision = False,
                  ):
         super(NetConfig, self).__init__()
 
-        self.images_dir = './data/images'
-        self.dark_dir = './data/dark'
-        self.masks_dir = './data/masks'
+        self.images_dir = './data/train/images'
+        self.dark_dir = './data/train/dark'
+        self.masks_dir = './data/train/masks'
         self.checkpoints_dir  = './checkpoints'
         self.checkpoints_dir1 = './checkpoints1'
 

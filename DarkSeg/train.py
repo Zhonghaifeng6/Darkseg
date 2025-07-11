@@ -25,8 +25,8 @@ criterion_L2 = nn.MSELoss()
 cfg = NetConfig()
 
 
-def train_net(net, cfg):
-    dataset = BasicDataset(cfg.images_dir, cfg.masks_dir, cfg.dark_dir, cfg.scale)
+def train_net(net, net1, cfg):
+    dataset = BasicDataset(cfg.images_dir, cfg.masks_dir, cfg.dark_dir)
 
     val_percent = cfg.validation / 100
     n_val = int(len(dataset) * val_percent)
@@ -73,6 +73,21 @@ def train_net(net, cfg):
                                                milestones=cfg.lr_decay_milestones,
                                                gamma = cfg.lr_decay_gamma)
 
+    if cfg.optimizer == 'Adam':
+        optimizer1 = optim.Adam(net1.parameters(),lr=cfg.lr)
+
+    elif cfg.optimizer == 'RMSprop':
+        optimizer1 = optim.RMSprop(net1.parameters(),lr=cfg.lr,weight_decay=cfg.weight_decay)
+
+    else:
+        optimizer1 = optim.SGD(net1.parameters(),lr=cfg.lr,momentum=cfg.momentum,weight_decay=cfg.weight_decay,nesterov=cfg.nesterov)
+
+
+    scheduler1 = optim.lr_scheduler.MultiStepLR(optimizer1,
+                                               milestones=cfg.lr_decay_milestones,
+                                               gamma = cfg.lr_decay_gamma)
+
+
     if cfg.n_classes > 1:
         criterion = LovaszLossSoftmax()
     else:
@@ -91,18 +106,17 @@ def train_net(net, cfg):
                 # Canny figure
                 canny_imgs = []
                 for img in batch_imgs:
-
                     img_np = img.permute(1, 2, 0).numpy()  # [C, H, W] -> [H, W, C]
                     img_np = (img_np * 255).astype(np.uint8)  # [0,1] -> [0,255]
 
                     # to gray
                     gray = cv2.cvtColor(img_np, cv2.COLOR_RGB2GRAY)
                     edges = cv2.Canny(gray, 100, 200)
-                    edges_rgb = cv2.cvtColor(edges, cv2.COLOR_GRAY2RGB)
-                    edges_tensor = torch.tensor(edges_rgb, dtype=torch.float32).permute(2, 0, 1) / 255.0
-
+                    # Keep single channel
+                    edges_tensor = torch.tensor(edges, dtype=torch.float32).unsqueeze(0) / 255.0  # [1, H, W]
                     canny_imgs.append(edges_tensor)
-                batch_cannys = torch.stack(canny_imgs)
+                batch_cannys = torch.stack(canny_imgs)  # [bs, 1, 256, 256]
+
 
                 assert batch_imgs.shape[1] == cfg.n_channels, \
                         f'Network has been defined with {cfg.n_channels} input channels, ' \
@@ -117,26 +131,28 @@ def train_net(net, cfg):
 
 
                 net.train()
+                net1.train()
 
-                ## training of the teacher model
-                teacher_masks, _ = net(batch_masks)
+                ## training the teacher model
+                teacher_masks, _ = net1(batch_imgs)
 
                 with torch.no_grad():
-                    _, mid_teacher = net(batch_masks)
+                    _, mid_teacher = net1(batch_imgs)
 
-                ## training of the student model
+                ## training the student model
                 student_masks, mid_student = net(batch_dark)
 
-                loss_s1 = criterion_L2(mid_student[0], mid_teacher[0]) / 32
-                loss_s2 = criterion_L2(mid_student[1], mid_teacher[1]) / 64
-                loss_s3 = criterion_L2(mid_student[2], mid_teacher[2]) / 160
-                loss_s4 = criterion_L2(mid_student[3], mid_teacher[3]) / 256
+                loss_s1 = criterion_L2(mid_student[0], mid_teacher[0]) / (32*32)
+                loss_s2 = criterion_L2(mid_student[1], mid_teacher[1]) / (64*64)
+                loss_s3 = criterion_L2(mid_student[2], mid_teacher[2]) / (160*160)
+                loss_s4 = criterion_L2(mid_student[3], mid_teacher[3]) / (256*256)
 
-                loss_in = criterion(teacher_masks, batch_cannys)
+                loss_in = criterion(teacher_masks, batch_masks)
 
                 loss_sm = loss_s1 + loss_s2 + loss_s3 + loss_s4
-                loss_be = criterion(teacher_masks, batch_masks)
-                loss_low = loss_be + loss_sm
+                loss_be = criterion(student_masks, batch_masks)
+
+                loss_low = loss_be + loss_sm * 0.5
 
                 loss_total = loss_low + loss_in
 
@@ -146,9 +162,12 @@ def train_net(net, cfg):
                 writer.add_scalar('model/lr', optimizer.param_groups[0]['lr'], global_step)
 
                 optimizer.zero_grad()
+                optimizer1.zero_grad()
                 loss_total.backward()
                 optimizer.step()
                 scheduler.step()
+                optimizer1.step()
+                scheduler1.step()
 
 
                 pbar.set_postfix(ordered_dict={
@@ -160,7 +179,7 @@ def train_net(net, cfg):
 
 
                 if global_step % (len(dataset) // (1 * cfg.batch_size)) == 0:
-                    val_score = eval_net(net, val_loader, device, n_val, cfg)
+                    val_score, inference_masks = eval_net(net, val_loader, device, n_val, cfg)
                     if cfg.n_classes > 1:
                         logging.info('Validation cross entropy: {}'.format(val_score))
                         writer.add_scalar('CrossEntropy/test', val_score, global_step)
@@ -200,18 +219,16 @@ def train_net(net, cfg):
                 ckpt_name = 'epoch_' + str(epoch + 1) + '.pth'
                 torch.save(net.state_dict(),
                            osp.join(cfg.checkpoints_dir, ckpt_name))
-                # torch.save(net1.state_dict(),
-                #            osp.join(cfg.checkpoints_dir1, ckpt_name))
     writer.close()
 
 
 def eval_net(net, loader, device, n_val, cfg):
     """
     Evaluation without the densecrf with the dice coefficient
-
     """
     net.eval()
     tot = 0
+    inference_masks = None  # 用于保存最后一个batch的预测结果
 
     with tqdm(total=n_val, desc='Validation round', unit='img', leave=False) as pbar:
         for batch in loader:
@@ -224,31 +241,37 @@ def eval_net(net, loader, device, n_val, cfg):
 
             # compute loss
             if cfg.deepsupervision:
-                masks_preds,_ = net(imgs)
+                masks_preds, _ = net(imgs)
+                inference_masks = masks_preds  # 保存最后一轮的预测结果（是 list）
                 loss = 0
                 for masks_pred in masks_preds:
                     tot_cross_entropy = 0
                     for true_mask, pred in zip(true_masks, masks_pred):
                         pred = (pred > cfg.out_threshold).float()
                         if cfg.n_classes > 1:
-                            sub_cross_entropy = F.cross_entropy(pred.unsqueeze(dim=0), true_mask.unsqueeze(dim=0).squeeze(1)).item()
+                            sub_cross_entropy = F.cross_entropy(
+                                pred.unsqueeze(dim=0), true_mask.unsqueeze(dim=0).squeeze(1)
+                            ).item()
                         else:
                             sub_cross_entropy = dice_coeff(pred, true_mask.squeeze(dim=1)).item()
                         tot_cross_entropy += sub_cross_entropy
                     tot_cross_entropy = tot_cross_entropy / len(masks_preds)
                     tot += tot_cross_entropy
             else:
-                masks_pred,_ = net(imgs)
+                masks_pred, _ = net(imgs)
+                inference_masks = masks_pred  # 保存最后一轮的预测结果（是 tensor）
                 for true_mask, pred in zip(true_masks, masks_pred):
                     pred = (pred > cfg.out_threshold).float()
                     if cfg.n_classes > 1:
-                        tot += F.cross_entropy(pred.unsqueeze(dim=0), true_mask.unsqueeze(dim=0).squeeze(1)).item()
+                        tot += F.cross_entropy(
+                            pred.unsqueeze(dim=0), true_mask.unsqueeze(dim=0).squeeze(1)
+                        ).item()
                     else:
                         tot += dice_coeff(pred, true_mask.squeeze(dim=1)).item()
 
             pbar.update(imgs.shape[0])
 
-    return tot / n_val
+    return tot / n_val, inference_masks
 
 
 if __name__ == '__main__':
@@ -272,7 +295,7 @@ if __name__ == '__main__':
     net.to(device=device)
 
     try:
-        train_net(net=net, net1=net ,cfg=cfg)
+        train_net(net=net, net1=net, cfg=cfg)
     except KeyboardInterrupt:
         torch.save(net.state_dict(), 'INTERRUPTED.pth')
         logging.info('Saved interrupt')

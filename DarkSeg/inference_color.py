@@ -22,14 +22,18 @@ cfg = NetConfig()
 def inference_one(net, image, device):
     net.eval()
 
-    img = torch.from_numpy(BasicDataset.preprocess(image, cfg.scale))
-
+    # 调整大小
+    w, h = image.size
+    newW, newH = int(cfg.scale * w), int(cfg.scale * h)
+    image = image.resize((newW, newH))
+    
+    # 预处理
+    img = torch.from_numpy(BasicDataset.preprocess(image))
     img = img.unsqueeze(0)
     img = img.to(device=device, dtype=torch.float32)
 
     with torch.no_grad():
         output,_ = net(img)
-        print(output.shape)
         if cfg.deepsupervision:
             output = output[-1]
 
@@ -40,7 +44,6 @@ def inference_one(net, image, device):
 
         probs = probs.squeeze(0)        # C x H x W
 
-        print(image.size[1])
         tf = transforms.Compose(
                 [
                     transforms.ToPILImage(),
@@ -62,15 +65,14 @@ def inference_one(net, image, device):
                 masks.append(mask)
             return masks
 
-
 def get_args():
     parser = argparse.ArgumentParser(description='Predict masks from input images',
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
-    parser.add_argument('--model', '-m', default='./checkpoints/epoch_100.pth',
+    parser.add_argument('--model', '-m', default='./checkpoints/epoch_181.pth',
                         metavar='FILE',
                         help="Specify the file in which the model is stored")
-    parser.add_argument('--input', '-i', type=str, default='./test/input-1',
+    parser.add_argument('--input', '-i', type=str, default='./data/test/dark',
                         help='Directory of input images')
     parser.add_argument('--output', '-o', type=str, default='./test/output',
                         help='Directory of ouput images')

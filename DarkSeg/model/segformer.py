@@ -2,8 +2,9 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torchsummary import summary
-from component import *
-
+from model.component import SRSP,WRSP
+import timm
+from collections import OrderedDict
 
 
 class OverlapPatchEmbed(nn.Module):
@@ -182,11 +183,39 @@ class Decoder(nn.Module):
         return d1
 
 
+pretrained_path = "pretrained/mit_b0.pth"
+
+class SegFormerEncoderWithPretrain(SegFormerEncoder):
+    def __init__(self,
+                 in_chans=3,
+                 embed_dims=[32, 64, 160, 256],
+                 num_heads=[1, 2, 5, 8],
+                 sr_ratios=[8, 4, 2, 1],
+                 depths=[2, 2, 2, 2],
+                 pretrained_path=None):
+        super().__init__(in_chans, embed_dims, num_heads, sr_ratios, depths)
+
+        if pretrained_path is not None:
+            print(f"Loading pretrained weights from: {pretrained_path}")
+            state_dict = torch.load(pretrained_path, map_location='cpu')
+
+            new_state_dict = OrderedDict()
+            for k, v in state_dict.items():
+                new_key = k.replace('backbone.', '').replace('module.', '')
+                new_state_dict[new_key] = v
+
+            missing, unexpected = self.load_state_dict(new_state_dict, strict=False)
+            print(f"Loaded with missing keys: {missing}")
+            print(f"Loaded with unexpected keys: {unexpected}")
+
 class DarkSeg(nn.Module):
-    def __init__(self, in_chans=3, num_classes=1):
+    def __init__(self, cfg, Is=False):
         super().__init__()
 
-        self.encoder = SegFormerEncoder(in_chans=in_chans)
+        in_chans = cfg.n_channels
+        num_classes = cfg.n_classes
+
+        self.encoder = SegFormerEncoderWithPretrain(in_chans=in_chans)
         self.decoder = Decoder()
         self.seg_head = nn.Conv2d(32, num_classes, kernel_size=1)
 
@@ -224,9 +253,9 @@ class DarkSeg(nn.Module):
 
 
 # if __name__ == "__main__":
-#     model = DarkSeg(in_chans=3, num_classes=10)
-#     x = torch.randn(2, 3, 256, 256)
-#     out,mid = model(x)
+#     model = SegFormerEncoderWithPretrain()
+#     x = torch.randn(4, 3, 400, 400)
+#     mid = model(x)
 #     a = mid[0]
 #     b = mid[1]
 #     c = mid[2]

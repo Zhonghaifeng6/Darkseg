@@ -1,6 +1,6 @@
 import torch.nn as nn
 from .net_base import *
-from .nested_net_base import *
+from .nested_net_base import VGGBlock
 
 class dUNet1(nn.Module):
     def __init__(self,cfg):
@@ -148,12 +148,6 @@ class DoubleConv(nn.Module):
         )
         self.initialize()
 
-    def initialize(self):
-        for module in self.modules():
-            if isinstance(module, (nn.Conv2d)):
-                init.xavier_uniform_(module.weight)
-                init.zeros_(module.bias)
-
     def forward(self, x):
         x1 = self.res_conv1(x)
         x2 = self.res_conv2(x1)
@@ -208,10 +202,6 @@ class OutConv(nn.Module):
         super(OutConv, self).__init__()
         self.conv = nn.Conv2d(in_channels, out_channels, kernel_size=1)
         self.initialize()
-
-    def initialize(self):
-        init.xavier_uniform_(self.conv.weight)
-        init.zeros_(self.conv.bias)
 
     def forward(self, x):
         return self.conv(x)
